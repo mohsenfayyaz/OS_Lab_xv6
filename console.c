@@ -189,6 +189,72 @@ void consputc(int c)
   cgaputc(c);
 }
 
+//move back one cursor
+void vga_move_back_cursor(){
+  int pos;
+  
+  // get cursor position
+  outb(CRTPORT, 14);                  
+  pos = inb(CRTPORT+1) << 8;
+  outb(CRTPORT, 15);
+  pos |= inb(CRTPORT+1);    
+
+  // move back
+  pos--;
+
+  // reset cursor
+  outb(CRTPORT, 15);
+  outb(CRTPORT+1, (unsigned char)(pos&0xFF));
+  outb(CRTPORT, 14);
+  outb(CRTPORT+1, (unsigned char )((pos>>8)&0xFF));
+  //crt[pos] = ' ' | 0x0700;
+}
+
+void vga_move_forward_cursor(){
+  int pos;
+  
+  // get cursor position
+  outb(CRTPORT, 14);                  
+  pos = inb(CRTPORT+1) << 8;
+  outb(CRTPORT, 15);
+  pos |= inb(CRTPORT+1);    
+
+  // move back
+  pos++;
+
+  // reset cursor
+  outb(CRTPORT, 15);
+  outb(CRTPORT+1, (unsigned char)(pos&0xFF));
+  outb(CRTPORT, 14);
+  outb(CRTPORT+1, (unsigned char )((pos>>8)&0xFF));
+  //crt[pos] = ' ' | 0x0700;
+}
+
+void vga_insert_char(int c, int back_counter){
+  int pos;
+
+  // get cursor position
+  outb(CRTPORT, 14);                  
+  pos = inb(CRTPORT+1) << 8;
+  outb(CRTPORT, 15);
+  pos |= inb(CRTPORT+1);
+
+  //move back crt buffer
+  for(int i = pos + back_counter; i >= pos; i--){
+    crt[i+1] = crt[i];
+  }
+  crt[pos] = (c&0xff) | 0x0700;  
+
+  // move cursor to next position
+  pos += 1;
+
+  outb(CRTPORT, 14);
+  outb(CRTPORT+1, pos>>8);
+  outb(CRTPORT, 15);
+  outb(CRTPORT+1, pos);
+  crt[pos+back_counter] = ' ' | 0x0700;
+}
+
 #define INPUT_BUF 128
 struct
 {
@@ -196,12 +262,22 @@ struct
   uint r; // Read index
   uint w; // Write index
   uint e; // Edit index
+  
+  uint pos; // real cursor position
 } input;
 
 #define C(x) ((x) - '@') // Control-x
 
 void consoleintr(int (*getc)(void))
 {
+  // get cursor position
+  outb(CRTPORT, 14);                  
+  input.pos = inb(CRTPORT+1) << 8;
+  outb(CRTPORT, 15);
+  input.pos |= inb(CRTPORT+1);
+
+  input.pos %= 80; // pos in line without row
+
   int c, doprocdump = 0;
 
   acquire(&cons.lock);
@@ -237,6 +313,22 @@ void consoleintr(int (*getc)(void))
         consputc(BACKSPACE);
       }
       break;
+    case '{': // Cursor to line start
+      while (input.pos != input.w &&
+             input.buf[(input.pos - 1) % INPUT_BUF] != '\n')
+      {
+        input.pos--;
+        vga_move_back_cursor();
+      }
+      break;
+    case '}': // Cursor to line end
+      while (input.e != input.pos)
+      {
+        input.pos++;
+        vga_move_forward_cursor();
+      }
+      break;
+
     default:
       if (c != 0 && input.e - input.r < INPUT_BUF)
       {
