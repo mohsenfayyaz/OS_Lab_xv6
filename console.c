@@ -166,7 +166,9 @@ cgaputc(int c)
   outb(CRTPORT + 1, pos >> 8);
   outb(CRTPORT, 15);
   outb(CRTPORT + 1, pos);
-  crt[pos] = ' ' | 0x0700;
+  if(c == BACKSPACE)
+    crt[pos] = ' ' | 0x0700;
+  //crt[pos] = ' ' | 0x0700;
 }
 
 void consputc(int c)
@@ -203,10 +205,10 @@ void vga_move_back_cursor(){
   pos--;
 
   // reset cursor
-  outb(CRTPORT, 15);
-  outb(CRTPORT+1, (unsigned char)(pos&0xFF));
   outb(CRTPORT, 14);
-  outb(CRTPORT+1, (unsigned char )((pos>>8)&0xFF));
+  outb(CRTPORT + 1, pos >> 8);
+  outb(CRTPORT, 15);
+  outb(CRTPORT + 1, pos);
   //crt[pos] = ' ' | 0x0700;
 }
 
@@ -223,10 +225,10 @@ void vga_move_forward_cursor(){
   pos++;
 
   // reset cursor
-  outb(CRTPORT, 15);
-  outb(CRTPORT+1, (unsigned char)(pos&0xFF));
   outb(CRTPORT, 14);
-  outb(CRTPORT+1, (unsigned char )((pos>>8)&0xFF));
+  outb(CRTPORT + 1, pos >> 8);
+  outb(CRTPORT, 15);
+  outb(CRTPORT + 1, pos);
   //crt[pos] = ' ' | 0x0700;
 }
 
@@ -249,10 +251,35 @@ void vga_insert_char(int c, int back_counter){
   pos += 1;
 
   outb(CRTPORT, 14);
-  outb(CRTPORT+1, pos>>8);
+  outb(CRTPORT + 1, pos >> 8);
   outb(CRTPORT, 15);
-  outb(CRTPORT+1, pos);
+  outb(CRTPORT + 1, pos);
   crt[pos+back_counter] = ' ' | 0x0700;
+}
+
+void shift_right(int back_counter){
+  int pos;
+
+  // get cursor position
+  outb(CRTPORT, 14);                  
+  pos = inb(CRTPORT+1) << 8;
+  outb(CRTPORT, 15);
+  pos |= inb(CRTPORT+1);
+
+  //move back crt buffer
+  for(int i = pos + back_counter; i >= pos; i--){
+    crt[i+1] = crt[i];
+  }
+  crt[pos] = ('_'&0xff) | 0x0700;  
+
+  // move cursor to next position
+  //pos += 1;
+
+  outb(CRTPORT, 14);
+  outb(CRTPORT + 1, pos >> 8);
+  outb(CRTPORT, 15);
+  outb(CRTPORT + 1, pos);
+  // crt[pos+back_counter] = ' ' | 0x0700;
 }
 
 #define INPUT_BUF 128
@@ -262,27 +289,22 @@ struct
   uint r; // Read index
   uint w; // Write index
   uint e; // Edit index
-  
-  uint pos; // real cursor position
 } input;
+
+uint end_pos=-1; // line last char position
 
 #define C(x) ((x) - '@') // Control-x
 
 void consoleintr(int (*getc)(void))
 {
-  // get cursor position
-  outb(CRTPORT, 14);                  
-  input.pos = inb(CRTPORT+1) << 8;
-  outb(CRTPORT, 15);
-  input.pos |= inb(CRTPORT+1);
-
-  input.pos %= 80; // pos in line without row
-
+  if(end_pos==-1){
+    end_pos = input.e;
+  }
   int c, doprocdump = 0;
 
   acquire(&cons.lock);
   while ((c = getc()) >= 0)
-  {
+  { 
     switch (c)
     {
     case C('P'): // Process listing.
@@ -296,6 +318,7 @@ void consoleintr(int (*getc)(void))
         input.e--;
         consputc(BACKSPACE);
       }
+      end_pos = input.e;
       break;
     case C('H'):
     case '\x7f': // Backspace
@@ -304,27 +327,32 @@ void consoleintr(int (*getc)(void))
         input.e--;
         consputc(BACKSPACE);
       }
+      end_pos--;
       break;
     case C('C'): // remove the whole input
-      while (input.e != input.w &&
+      while (input.e != end_pos)
+      {
+        input.e++;
+        vga_move_forward_cursor();
+      }
+      for (input.e = end_pos; input.e > input.r; input.e--)
+      {
+        consputc(BACKSPACE);
+      }
+      end_pos = input.e;
+      break;
+    case '{': // Cursor to line start
+      while (input.e != input.r &&
              input.buf[(input.e - 1) % INPUT_BUF] != '\n')
       {
         input.e--;
-        consputc(BACKSPACE);
-      }
-      break;
-    case '{': // Cursor to line start
-      while (input.pos != input.w &&
-             input.buf[(input.pos - 1) % INPUT_BUF] != '\n')
-      {
-        input.pos--;
         vga_move_back_cursor();
       }
       break;
     case '}': // Cursor to line end
-      while (input.e != input.pos)
+      while (input.e != end_pos)
       {
-        input.pos++;
+        input.e++;
         vga_move_forward_cursor();
       }
       break;
@@ -332,12 +360,17 @@ void consoleintr(int (*getc)(void))
     default:
       if (c != 0 && input.e - input.r < INPUT_BUF)
       {
+        if(input.e < end_pos){
+          shift_right(end_pos - input.e);
+        }
         c = (c == '\r') ? '\n' : c;
         input.buf[input.e++ % INPUT_BUF] = c;
         consputc(c);
+        end_pos++;
         if (c == '\n' || c == C('D') || input.e == input.r + INPUT_BUF)
         {
           input.w = input.e;
+          end_pos=-1;
           wakeup(&input.r);
         }
       }
