@@ -166,7 +166,8 @@ cgaputc(int c)
   outb(CRTPORT + 1, pos >> 8);
   outb(CRTPORT, 15);
   outb(CRTPORT + 1, pos);
-  if(c != '\b') {
+  if (c != '\b')
+  {
     crt[pos] = ' ' | 0x0700;
   }
 }
@@ -192,14 +193,15 @@ void consputc(int c)
 }
 
 //move back one cursor
-void vga_move_back_cursor(){
+void vga_move_back_cursor()
+{
   int pos;
-  
+
   // get cursor position
-  outb(CRTPORT, 14);                  
-  pos = inb(CRTPORT+1) << 8;
+  outb(CRTPORT, 14);
+  pos = inb(CRTPORT + 1) << 8;
   outb(CRTPORT, 15);
-  pos |= inb(CRTPORT+1);    
+  pos |= inb(CRTPORT + 1);
 
   // move back
   pos--;
@@ -212,14 +214,15 @@ void vga_move_back_cursor(){
   //crt[pos] = ' ' | 0x0700;
 }
 
-void vga_move_forward_cursor(){
+void vga_move_forward_cursor()
+{
   int pos;
-  
+
   // get cursor position
-  outb(CRTPORT, 14);                  
-  pos = inb(CRTPORT+1) << 8;
+  outb(CRTPORT, 14);
+  pos = inb(CRTPORT + 1) << 8;
   outb(CRTPORT, 15);
-  pos |= inb(CRTPORT+1);    
+  pos |= inb(CRTPORT + 1);
 
   // move back
   pos++;
@@ -232,20 +235,22 @@ void vga_move_forward_cursor(){
   //crt[pos] = ' ' | 0x0700;
 }
 
-void vga_insert_char(int c, int back_counter){
+void vga_insert_char(int c, int back_counter)
+{
   int pos;
 
   // get cursor position
-  outb(CRTPORT, 14);                  
-  pos = inb(CRTPORT+1) << 8;
+  outb(CRTPORT, 14);
+  pos = inb(CRTPORT + 1) << 8;
   outb(CRTPORT, 15);
-  pos |= inb(CRTPORT+1);
+  pos |= inb(CRTPORT + 1);
 
   //move back crt buffer
-  for(int i = pos + back_counter; i >= pos; i--){
-    crt[i+1] = crt[i];
+  for (int i = pos + back_counter; i >= pos; i--)
+  {
+    crt[i + 1] = crt[i];
   }
-  crt[pos] = (c&0xff) | 0x0700;  
+  crt[pos] = (c & 0xff) | 0x0700;
 
   // move cursor to next position
   pos += 1;
@@ -254,23 +259,25 @@ void vga_insert_char(int c, int back_counter){
   outb(CRTPORT + 1, pos >> 8);
   outb(CRTPORT, 15);
   outb(CRTPORT + 1, pos);
-  crt[pos+back_counter] = ' ' | 0x0700;
+  crt[pos + back_counter] = ' ' | 0x0700;
 }
 
-void shift_right(int back_counter){
+void shift_right(int back_counter)
+{
   int pos;
 
   // get cursor position
-  outb(CRTPORT, 14);                  
-  pos = inb(CRTPORT+1) << 8;
+  outb(CRTPORT, 14);
+  pos = inb(CRTPORT + 1) << 8;
   outb(CRTPORT, 15);
-  pos |= inb(CRTPORT+1);
+  pos |= inb(CRTPORT + 1);
 
   //move back crt buffer
-  for(int i = pos + back_counter; i >= pos; i--){
-    crt[i+1] = crt[i];
+  for (int i = pos + back_counter; i >= pos; i--)
+  {
+    crt[i + 1] = crt[i];
   }
-  crt[pos] = ('_'&0xff) | 0x0700;  
+  crt[pos] = ('_' & 0xff) | 0x0700;
 
   // move cursor to next position
   //pos += 1;
@@ -289,16 +296,17 @@ struct
   uint r; // Read index
   uint w; // Write index
   uint e; // Edit index
-  uint size; 
+  uint size;
 } input;
 
-uint end_pos=-1; // line last char position
+uint end_pos = -1; // line last char position
 
 #define C(x) ((x) - '@') // Control-x
 
 void consoleintr(int (*getc)(void))
 {
-  if(end_pos==-1){
+  if (end_pos == -1)
+  {
     end_pos = input.e;
   }
   int c, doprocdump = 0;
@@ -306,7 +314,7 @@ void consoleintr(int (*getc)(void))
 
   acquire(&cons.lock);
   while ((c = getc()) >= 0)
-  { 
+  {
     switch (c)
     {
     case C('P'): // Process listing.
@@ -324,39 +332,51 @@ void consoleintr(int (*getc)(void))
       break;
     case C('H'):
     case '\x7f': // Backspace
-      if (input.e != input.w)
+      if (input.e != input.r + input.size)
       {
-        input.e--;
-        consputc(BACKSPACE);
-        input.size--;
+        if (input.e > input.w)
+        {
+          input.e--;
+          input.size--;
+          consputc('\b');
+          for (i = 0; i < (input.r + input.size - input.e); i++) // shift all characters left
+          {
+            input.buf[(input.e + i) % INPUT_BUF] = input.buf[(input.e + i + 1) % INPUT_BUF];
+          }
+          for (i = 0; i < (input.r + input.size - input.e); i++) // write all characters again
+          {
+            consputc(input.buf[(input.e + i) % INPUT_BUF]);
+          }
+          for (i = 0; i < (input.r + input.size - input.e); i++) // return cursor back to edit index
+          {
+            consputc('\b');
+          }
+        }
+      }
+      else
+      {
+        if (input.e != input.w)
+        {
+          input.e--;
+          consputc(BACKSPACE);
+          input.size--;
+        }
       }
       end_pos--;
       break;
     case C('C'): // remove the whole input
-      while (input.e != end_pos)
-      {
-        input.e++;
-        vga_move_forward_cursor();
+      for(i = 0; i < input.w + input.size - input.e; i++) {
+        consputc(' ');
       }
-      for (input.e = end_pos; input.e > input.r; input.e--)
-      {
-        consputc(BACKSPACE);
+      for(int i = 0; i < input.size; i++) {
+          consputc(BACKSPACE);
       }
-      end_pos = input.e;
-      break;
-    case '{': // Cursor to line start
-      while (input.e != input.r &&
-             input.buf[(input.e - 1) % INPUT_BUF] != '\n')
-      {
-        input.e--;
-<<<<<<< HEAD
-        input.size--;
-        consputc(BACKSPACE);
-      }
+      input.e = input.w;
+      input.size = 0;
       break;
     case '{':
-      while(input.e != input.w &&
-             input.buf[(input.e - 1) % INPUT_BUF] != '\n') 
+      while (input.e != input.w &&
+             input.buf[(input.e - 1) % INPUT_BUF] != '\n')
       {
         input.e--;
         consputc('\b');
@@ -364,66 +384,45 @@ void consoleintr(int (*getc)(void))
 
       break;
     case '}':
-      while(input.e != input.r + input.size)
+      while (input.e != input.r + input.size)
       {
         consputc(input.buf[input.e]);
         input.e = (input.e + 1) % INPUT_BUF;
       }
 
       break;
-=======
-        vga_move_back_cursor();
-      }
-      break;
-    case '}': // Cursor to line end
-      while (input.e != end_pos)
-      {
-        input.e++;
-        vga_move_forward_cursor();
-      }
-      break;
-
->>>>>>> 3f08621db43ab9d17092dbcdae987e58e8f4d523
     default:
       if (c != 0 && input.e - input.r < INPUT_BUF)
       {
-        if(input.e < end_pos){
-          shift_right(end_pos - input.e);
-        }
         c = (c == '\r') ? '\n' : c;
-<<<<<<< HEAD
-        if(input.e != input.r + input.size) {
-          for(i = ((input.r + input.size)%INPUT_BUF - input.e); i > 0; i--) {
+        if (input.e != input.r + input.size)
+        {
+          for (i = (input.r + input.size - input.e); i > 0; i--)
+          {
             input.buf[(input.e + i) % INPUT_BUF] = input.buf[(input.e + i - 1) % INPUT_BUF];
           }
           input.buf[input.e++ % INPUT_BUF] = c;
-          input.size ++;
+          input.size++;
           consputc(c);
-          for(i = 0; i < (input.r + input.size - input.e); i++) {
+          for (i = 0; i < (input.r + input.size - input.e); i++)
+          {
             consputc(input.buf[(input.e + i) % INPUT_BUF]);
           }
-          for(i = 0; i < (input.r + input.size - input.e); i++) {
+          for (i = 0; i < (input.r + input.size - input.e); i++)
+          {
             consputc('\b');
           }
         }
-        else {
+        else
+        {
           input.buf[input.e++ % INPUT_BUF] = c;
-          input.size ++;
+          input.size++;
           consputc(c);
         }
         if (c == '\n' || c == C('D') || input.size == INPUT_BUF)
         {
           input.w = input.e;
           input.size = 0;
-=======
-        input.buf[input.e++ % INPUT_BUF] = c;
-        consputc(c);
-        end_pos++;
-        if (c == '\n' || c == C('D') || input.e == input.r + INPUT_BUF)
-        {
-          input.w = input.e;
-          end_pos=-1;
->>>>>>> 3f08621db43ab9d17092dbcdae987e58e8f4d523
           wakeup(&input.r);
         }
       }
