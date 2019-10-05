@@ -144,7 +144,7 @@ cgaputc(int c)
 
   if (c == '\n')
     pos += 80 - pos % 80;
-  else if (c == BACKSPACE)
+  else if (c == BACKSPACE || c == '\b')
   {
     if (pos > 0)
       --pos;
@@ -166,7 +166,9 @@ cgaputc(int c)
   outb(CRTPORT + 1, pos >> 8);
   outb(CRTPORT, 15);
   outb(CRTPORT + 1, pos);
-  crt[pos] = ' ' | 0x0700;
+  if(c != '\b') {
+    crt[pos] = ' ' | 0x0700;
+  }
 }
 
 void consputc(int c)
@@ -196,6 +198,7 @@ struct
   uint r; // Read index
   uint w; // Write index
   uint e; // Edit index
+  uint size; 
 } input;
 
 #define C(x) ((x) - '@') // Control-x
@@ -203,6 +206,7 @@ struct
 void consoleintr(int (*getc)(void))
 {
   int c, doprocdump = 0;
+  int i;
 
   acquire(&cons.lock);
   while ((c = getc()) >= 0)
@@ -227,6 +231,7 @@ void consoleintr(int (*getc)(void))
       {
         input.e--;
         consputc(BACKSPACE);
+        input.size--;
       }
       break;
     case C('C'): // remove the whole input
@@ -234,18 +239,54 @@ void consoleintr(int (*getc)(void))
              input.buf[(input.e - 1) % INPUT_BUF] != '\n')
       {
         input.e--;
+        input.size--;
         consputc(BACKSPACE);
       }
+      break;
+    case '{':
+      while(input.e != input.w &&
+             input.buf[(input.e - 1) % INPUT_BUF] != '\n') 
+      {
+        input.e--;
+        consputc('\b');
+      }
+
+      break;
+    case '}':
+      while(input.e != input.r + input.size)
+      {
+        consputc(input.buf[input.e]);
+        input.e = (input.e + 1) % INPUT_BUF;
+      }
+
       break;
     default:
       if (c != 0 && input.e - input.r < INPUT_BUF)
       {
         c = (c == '\r') ? '\n' : c;
-        input.buf[input.e++ % INPUT_BUF] = c;
-        consputc(c);
-        if (c == '\n' || c == C('D') || input.e == input.r + INPUT_BUF)
+        if(input.e != input.r + input.size) {
+          for(i = ((input.r + input.size)%INPUT_BUF - input.e); i > 0; i--) {
+            input.buf[(input.e + i) % INPUT_BUF] = input.buf[(input.e + i - 1) % INPUT_BUF];
+          }
+          input.buf[input.e++ % INPUT_BUF] = c;
+          input.size ++;
+          consputc(c);
+          for(i = 0; i < (input.r + input.size - input.e); i++) {
+            consputc(input.buf[(input.e + i) % INPUT_BUF]);
+          }
+          for(i = 0; i < (input.r + input.size - input.e); i++) {
+            consputc('\b');
+          }
+        }
+        else {
+          input.buf[input.e++ % INPUT_BUF] = c;
+          input.size ++;
+          consputc(c);
+        }
+        if (c == '\n' || c == C('D') || input.size == INPUT_BUF)
         {
           input.w = input.e;
+          input.size = 0;
           wakeup(&input.r);
         }
       }
