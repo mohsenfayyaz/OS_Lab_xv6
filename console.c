@@ -343,10 +343,13 @@ void consoleintr(int (*getc)(void))
           {
             input.buf[(input.e + i) % INPUT_BUF] = input.buf[(input.e + i + 1) % INPUT_BUF];
           }
+          input.buf[(input.r + input.size) % INPUT_BUF] = ' ';
           for (i = 0; i < (input.r + input.size - input.e); i++) // write all characters again
           {
             consputc(input.buf[(input.e + i) % INPUT_BUF]);
           }
+          consputc(' ');
+          consputc('\b');
           for (i = 0; i < (input.r + input.size - input.e); i++) // return cursor back to edit index
           {
             consputc('\b');
@@ -387,7 +390,7 @@ void consoleintr(int (*getc)(void))
       while (input.e != input.r + input.size)
       {
         consputc(input.buf[input.e]);
-        input.e = (input.e + 1) % INPUT_BUF;
+        input.e++;
       }
 
       break;
@@ -397,20 +400,33 @@ void consoleintr(int (*getc)(void))
         c = (c == '\r') ? '\n' : c;
         if (input.e != input.r + input.size)
         {
-          for (i = (input.r + input.size - input.e); i > 0; i--)
+          if (c == '\n' || c == C('D'))
           {
-            input.buf[(input.e + i) % INPUT_BUF] = input.buf[(input.e + i - 1) % INPUT_BUF];
+            while (input.e != input.r + input.size)
+            {
+              consputc(input.buf[input.e]);
+              input.e++;
+            }
+            input.buf[input.e++ % INPUT_BUF] = c;
+            input.size++;
+            consputc(c);
           }
-          input.buf[input.e++ % INPUT_BUF] = c;
-          input.size++;
-          consputc(c);
-          for (i = 0; i < (input.r + input.size - input.e); i++)
-          {
-            consputc(input.buf[(input.e + i) % INPUT_BUF]);
-          }
-          for (i = 0; i < (input.r + input.size - input.e); i++)
-          {
-            consputc('\b');
+          else {
+            for (i = (input.r + input.size - input.e); i > 0; i--)
+            {
+              input.buf[(input.e + i) % INPUT_BUF] = input.buf[(input.e + i - 1) % INPUT_BUF];
+            }
+            input.buf[input.e++ % INPUT_BUF] = c;
+            input.size++;
+            consputc(c);
+            for (i = 0; i < (input.r + input.size - input.e); i++)
+            {
+              consputc(input.buf[(input.e + i) % INPUT_BUF]);
+            }
+            for (i = 0; i < (input.r + input.size - input.e); i++)
+            {
+              consputc('\b');
+            }
           }
         }
         else
