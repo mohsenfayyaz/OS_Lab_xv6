@@ -39,6 +39,7 @@ int main(int argc, char *argv[])
   }
   else if (argc == 2)
   {
+    unlink(argv[1]);
     if ((out = open(argv[1], O_CREATE | O_RDWR)) < 0)
     {
       printf(1, "cpt: cannot open %s\n", argv[1]);
@@ -54,6 +55,7 @@ int main(int argc, char *argv[])
       printf(1, "cpt: cannot open %s\n", argv[1]);
       exit();
     }
+    unlink(argv[2]);
     if ((out = open(argv[2], O_CREATE | O_RDWR)) < 0)
     {
       printf(1, "cpt: cannot create or edit %s\n", argv[2]);
