@@ -86,7 +86,8 @@ int sys_uptime(void)
 
 int sys_count_num_of_digits(void)
 {
-  int number = myproc()->tf->edi;
+  // int number = myproc()->tf->edi;
+  int number;
   int num_of_digits = 0;
   if (argint(0, &number) < 0)
     return -1;
@@ -101,4 +102,15 @@ int sys_count_num_of_digits(void)
 int sys_get_parent_id(void)
 {
   return myproc()->parent->pid;
+}
+
+int sys_get_children(void)
+{
+  // char result[100];
+  int pid;
+  if (argint(0, &pid) < 0)
+    return -1;
+  // get_children_of(pid);
+  return 0;
+  // TODO have to pass the children pid in some way
 }
