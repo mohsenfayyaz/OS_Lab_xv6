@@ -15,4 +15,10 @@ int main(int argc, char *argv[])
         printf(1, "parent id: %d \n", get_parent_id());
         exit();
     }
+    else if (argc == 3)
+    {
+        printf(1, "adding the pathes to PATH ... \n");
+        set_path(argv[2]);
+        exit();
+    }
 }

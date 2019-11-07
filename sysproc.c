@@ -114,3 +114,12 @@ int sys_get_children(void)
   return 0;
   // TODO have to pass the children pid in some way
 }
+
+int sys_set_path(void)
+{
+  char *arg;
+  if (argstr(0, &arg) < 0)
+    return -1;
+  add_path(arg);
+  return 0;
+}

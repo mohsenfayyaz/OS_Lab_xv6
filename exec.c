@@ -7,6 +7,14 @@
 #include "x86.h"
 #include "elf.h"
 
+char *PATH[100];
+int num_of_pathes = 0;
+
+void add_path(char *path)
+{
+  PATH[num_of_pathes++] = path;
+}
+
 int exec(char *path, char **argv)
 {
   char *s, *last;
@@ -19,12 +27,23 @@ int exec(char *path, char **argv)
   struct proc *curproc = myproc();
 
   begin_op();
-
   if ((ip = namei(path)) == 0)
   {
-    end_op();
-    // cprintf("exec: fail\n");
-    return -1;
+    char command[100];
+    command[0] = '/';
+    int i = 0;
+    while (path[i] != '\0')
+    {
+      command[i + 1] = path[i];
+      i++;
+    }
+    command[i + 1] = '\0';
+    if ((ip = namei(command)) == 0)
+    {
+      end_op();
+      cprintf("exec: fail\n");
+      return -1;
+    }
   }
   ilock(ip);
   pgdir = 0;
