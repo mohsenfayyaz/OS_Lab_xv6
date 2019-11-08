@@ -87,16 +87,20 @@ int sys_uptime(void)
 int sys_count_num_of_digits(void)
 {
   // int number = myproc()->tf->edi;
-  int number;
+  int number = 0;
   int num_of_digits = 0;
-  if (argint(0, &number) < 0)
-    return -1;
+  // if (argint(0, &number) < 0)
+  //   return -1;
+  number = myproc()->tf->ebx; //number = ebx
+  int save_number = number;
   while (number != 0)
   {
     num_of_digits++;
     number /= 10;
   }
-  return num_of_digits;
+  cprintf("From Kernel: #digits of %d is %d\n", save_number, num_of_digits);
+  // return num_of_digits;
+  return 0;
 }
 
 int sys_get_parent_id(void)

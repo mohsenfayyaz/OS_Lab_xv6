@@ -23,7 +23,7 @@ int getpid(void);
 char *sbrk(int);
 int sleep(int);
 int uptime(void);
-int count_num_of_digits(int);
+int count_num_of_digits(void);
 int get_parent_id(void);
 int get_children(int);
 void set_path(char *);

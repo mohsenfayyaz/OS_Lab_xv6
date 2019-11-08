@@ -7,7 +7,23 @@ int main(int argc, char *argv[])
 {
     if (argc == 2)
     {
-        printf(1, "number of digits:  %d \n", count_num_of_digits(atoi(argv[1])));
+        // We can use ebx or edx 
+        int saved_ebx, number=atoi(argv[1]);
+        // asm("movl %%ebx, %0;" : "=r" (saved_ebx));
+        // asm("movl %0, %%ebx;" : : "r"(number) );
+        asm volatile(
+            "movl %%ebx, %0;"
+            "movl %1, %%ebx;"
+            : "=r" (saved_ebx)
+            : "r"(number)
+        );
+        // call function by asm
+        // asm("movl $22 , %eax;");
+        // asm("int $64");
+        // count_num_of_digits(atoi(argv[1]));
+        printf(1, "count_num_of_digits() from user: \n");
+        count_num_of_digits();
+        asm("movl %0, %%ebx" : : "r"(saved_ebx) );
         exit();
     }
     else if (argc == 1)
