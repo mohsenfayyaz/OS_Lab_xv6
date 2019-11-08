@@ -120,6 +120,7 @@ int sys_set_path(void)
   char *arg;
   if (argstr(0, &arg) < 0)
     return -1;
+  // cprintf(arg);
   add_path(arg);
   return 0;
 }

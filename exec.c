@@ -7,12 +7,35 @@
 #include "x86.h"
 #include "elf.h"
 
-char *PATH[100];
+char PATH[100][100];
 int num_of_pathes = 0;
 
 void add_path(char *path)
 {
-  PATH[num_of_pathes++] = path;
+  char sub_path[100];
+  int i = 0;
+  int j = 0;
+  while (path[i] != '\0')
+  {
+    if (path[i] == ':')
+    {
+      sub_path[j] = '\0';
+      // cprintf(sub_path);
+      j = 0;
+      i++;
+      strncpy(PATH[num_of_pathes++], sub_path, strlen(sub_path));
+      // cprintf("%s \n", PATH[num_of_pathes - 1]);
+      continue;
+    }
+    sub_path[j] = path[i];
+    i++;
+    j++;
+  }
+  int k;
+  for (k = 0; k < num_of_pathes; k++)
+  {
+    cprintf("%s \n", PATH[k]);
+  }
 }
 
 int exec(char *path, char **argv)
@@ -25,25 +48,38 @@ int exec(char *path, char **argv)
   struct proghdr ph;
   pde_t *pgdir, *oldpgdir;
   struct proc *curproc = myproc();
-
+  int success = 0;
   begin_op();
   if ((ip = namei(path)) == 0)
   {
-    char command[100];
-    command[0] = '/';
-    int i = 0;
-    while (path[i] != '\0')
+    int k;
+    for (k = 0; k < num_of_pathes; k++)
     {
-      command[i + 1] = path[i];
-      i++;
+      char command[100];
+      strncpy(command, PATH[k], strlen(PATH[k]));
+      int i = 0;
+      while (path[i] != '\0')
+      {
+        command[i + strlen(PATH[k])] = path[i];
+        i++;
+      }
+      command[i + strlen(PATH[k])] = '\0';
+      if ((ip = namei(command)) != 0)
+      {
+        success = 1;
+        break;
+      }
     }
-    command[i + 1] = '\0';
-    if ((ip = namei(command)) == 0)
-    {
-      end_op();
-      cprintf("exec: fail\n");
-      return -1;
-    }
+  }
+  else
+  {
+    success = 1;
+  }
+  if (!success)
+  {
+    end_op();
+    cprintf("exec: fail\n");
+    return -1;
   }
   ilock(ip);
   pgdir = 0;
