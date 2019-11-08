@@ -119,7 +119,7 @@ void sleep(void *, struct spinlock *);
 void userinit(void);
 int wait(void);
 void add_path(char *);
-// int get_children_of(int);
+int get_children_of(int);
 void wakeup(void *);
 void yield(void);
 

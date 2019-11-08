@@ -322,24 +322,43 @@ int wait(void)
   }
 }
 
-// int get_children_of(int pid)
-// {
-// int children[10];
-// int num_of_children = 0;
-// struct proc *p;
-// acquire(&ptable.lock);
-// for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-// {
-//   if (p->parent->pid == pid)
-//   {
-//     children[num_of_children] = p->pid;
-//     num_of_children++;
-//   }
-// }
-// release(&ptable.lock);
-// children[num_of_children] = -1;
-// return children;
-// }
+int pow(int a, int n){
+  if(n==0) return 1;
+  int p=a;
+  for(int i = 1; i<n; i++){
+    p = p * a;
+  }
+  return p;
+}
+
+
+int get_children_of(int pid)
+{
+  // int children[100];
+  int concat_children = 0;
+  int num_of_children = 0;
+  int has_zero = 0;
+  struct proc *p;
+  acquire(&ptable.lock);
+  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+  {
+    if (p->parent->pid == pid)
+    {
+      if(p->pid == 0){
+        has_zero = 1;
+      }
+      // children[num_of_children] = p->pid;
+      concat_children += p->pid * pow(10, num_of_children);
+      num_of_children++;
+    }
+  }
+  release(&ptable.lock);
+
+  // children[num_of_children] = -1;
+  if(concat_children == 0 && has_zero == 0) 
+    concat_children = -1;
+  return concat_children;
+}
 
 //PAGEBREAK: 42
 // Per-CPU process scheduler.

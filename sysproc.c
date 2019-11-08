@@ -108,14 +108,44 @@ int sys_get_parent_id(void)
   return myproc()->parent->pid;
 }
 
+
+int pow2(int a, int n){
+  if(n==0) return 1;
+  int p=a;
+  for(int i = 1; i<n; i++){
+    p = p * a;
+  }
+  return p;
+}
+
 int sys_get_children(void)
 {
-  // char result[100];
   int pid;
   if (argint(0, &pid) < 0)
     return -1;
-  // get_children_of(pid);
-  return 0;
+  // int children = get_children_of(pid);
+  int grandchildren = 0;
+  int grand_counter = 0;
+  int exploring_queue = pid;
+  while(exploring_queue > 0){
+    int children = get_children_of(exploring_queue%10);
+    // cprintf("%d|%d|%d\n", exploring_queue, exploring_queue%10, get_children_of(exploring_queue%10));
+    exploring_queue /= 10;
+
+    int temp_children = children;
+    while (temp_children > 0)
+    {
+      int new_child_id = temp_children % 10;
+      grandchildren += new_child_id * pow2(10, grand_counter);
+      temp_children /= 10;
+      grand_counter++;
+
+      exploring_queue = exploring_queue*10 + new_child_id;
+    }
+  }
+  // cprintf("|%d|%d|\n", pid, children);
+  // return children;
+  return grandchildren;
   // TODO have to pass the children pid in some way
 }
 
