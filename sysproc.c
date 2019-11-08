@@ -127,7 +127,9 @@ int sys_get_children(void)
   int grandchildren = 0;
   int grand_counter = 0;
   int exploring_queue = pid;
-  while(exploring_queue > 0){
+  while(exploring_queue > 0 || pid == 0){
+    if(pid == 0)
+      pid = -1;
     int children = get_children_of(exploring_queue%10);
     // cprintf("%d|%d|%d\n", exploring_queue, exploring_queue%10, get_children_of(exploring_queue%10));
     exploring_queue /= 10;
@@ -145,6 +147,9 @@ int sys_get_children(void)
   }
   // cprintf("|%d|%d|\n", pid, children);
   // return children;
+  if (grandchildren == 0){
+    return -1;
+  }
   return grandchildren;
   // TODO have to pass the children pid in some way
 }
