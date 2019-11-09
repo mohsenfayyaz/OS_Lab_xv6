@@ -103,6 +103,7 @@ extern int sys_count_num_of_digits(void);
 extern int sys_get_parent_id(void);
 extern int sys_get_children(void);
 extern int sys_set_path(void);
+extern int sys_set_sleep(void);
 
 static int (*syscalls[])(void) = {
     [SYS_fork] sys_fork,
@@ -129,7 +130,9 @@ static int (*syscalls[])(void) = {
     [SYS_count_num_of_digits] sys_count_num_of_digits,
     [SYS_get_parent_id] sys_get_parent_id,
     [SYS_get_children] sys_get_children,
-    [SYS_set_path] sys_set_path};
+    [SYS_set_path] sys_set_path,
+    [SYS_set_sleep] sys_set_sleep
+    };
 
 void syscall(void)
 {

@@ -163,3 +163,24 @@ int sys_set_path(void)
   add_path(arg);
   return 0;
 }
+
+
+int sys_set_sleep(void)
+{
+  int n;
+  uint ticks0;
+
+  if (argint(0, &n) < 0)
+    return -1;
+  acquire(&tickslock);
+  ticks0 = ticks;
+  while (ticks - ticks0 < n * 70)
+  {
+    release(&tickslock);
+    sti();
+    acquire(&tickslock);
+  }
+  release(&tickslock);
+
+  return 0;
+}

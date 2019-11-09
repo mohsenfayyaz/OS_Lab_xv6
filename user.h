@@ -27,6 +27,7 @@ int count_num_of_digits(void);
 int get_parent_id(void);
 int get_children(int);
 void set_path(char *);
+void set_sleep(int);
 
 // ulib.c
 int stat(const char *, struct stat *);

@@ -24,3 +24,4 @@
 #define SYS_get_parent_id 23
 #define SYS_get_children 24
 #define SYS_set_path 25
+#define SYS_set_sleep 26

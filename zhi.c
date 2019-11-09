@@ -65,11 +65,17 @@ int main(int argc, char *argv[])
             int p3 = fork();
             if(p3!=0)
                 printf(1, "new Child of %d: %d\n", getpid(), p3);
+            sleep(2);
         }else{
             printf(1, "new Child of %d: %d\n", getpid(), p1);
             p2=fork();
             if(p2!=0)
                 printf(1, "new Child of %d: %d\n", getpid(), p2);
+            else
+            {
+                sleep(1);
+            }
+            
         }
 
         // if(p1!=0 && p2!=0)
