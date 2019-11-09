@@ -174,7 +174,7 @@ int sys_set_sleep(void)
     return -1;
   acquire(&tickslock);
   ticks0 = ticks;
-  while (ticks - ticks0 < n * 70)
+  while (ticks - ticks0 < n * 90)
   {
     release(&tickslock);
     sti();
@@ -183,4 +183,14 @@ int sys_set_sleep(void)
   release(&tickslock);
 
   return 0;
+}
+
+int sys_get_time(void)
+{
+  struct rtcdate *t;
+  if(argptr(0, (void*)&t, sizeof(&t)) < 0)
+    return -1;
+  cmostime(t);
+  int second = t->second + t->minute * 60 + t->hour * 3600;
+  return second;
 }

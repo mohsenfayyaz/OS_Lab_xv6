@@ -13,6 +13,7 @@
 #define COMMAND_PARENT "parent"
 #define COMMAND_CHILDREN "children"
 #define COMMAND_PATH "path"
+#define COMMAND_SLEEP "sleep"
 
 int main(int argc, char *argv[])
 {
@@ -83,6 +84,17 @@ int main(int argc, char *argv[])
         wait();
         wait();
         wait();
+        exit();
+    }
+
+    if (strcmp(argv[1], COMMAND_SLEEP)  == 0 && argc == 3)
+    {
+        int sleep_seconds = atoi(argv[2]);
+        printf(1, "user: starting sleep ... \n");
+        int t1 = get_time();
+        set_sleep(sleep_seconds);
+        int t2 = get_time();
+        printf(1, "user: sleep real duration: %d\n", t2-t1);
         exit();
     }
 

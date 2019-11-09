@@ -28,6 +28,7 @@ int get_parent_id(void);
 int get_children(int);
 void set_path(char *);
 void set_sleep(int);
+int get_time(void);
 
 // ulib.c
 int stat(const char *, struct stat *);
