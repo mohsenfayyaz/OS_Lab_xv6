@@ -24,6 +24,11 @@ void add_path(char *path)
       j = 0;
       i++;
       strncpy(PATH[num_of_pathes++], sub_path, strlen(sub_path));
+      // if (strncmp(PATH[num_of_pathes - 1], "/", 2))
+      // {
+      //   PATH[num_of_pathes - 1][strlen(sub_path)] = '/';
+      //   PATH[num_of_pathes - 1][strlen(sub_path) + 1] = '\0';
+      // }
       // cprintf("%s \n", PATH[num_of_pathes - 1]);
       continue;
     }
@@ -64,6 +69,7 @@ int exec(char *path, char **argv)
         i++;
       }
       command[i + strlen(PATH[k])] = '\0';
+      cprintf("%s \n", command);
       if ((ip = namei(command)) != 0)
       {
         success = 1;
