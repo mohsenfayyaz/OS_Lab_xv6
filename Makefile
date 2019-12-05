@@ -168,7 +168,7 @@ mkfs: mkfs.c fs.h
 UPROGS=\
 	_cat\
 	_cpt\
-	_chPr\
+	_chsh\
 	_zhi\
 	_echo\
 	_forktest\

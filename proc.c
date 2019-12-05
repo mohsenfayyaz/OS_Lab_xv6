@@ -6,8 +6,7 @@
 #include "x86.h"
 #include "proc.h"
 #include "spinlock.h"
-#include <stdlib.h>
-#include <time.h>
+#include "date.h"
 
 struct
 {
@@ -90,6 +89,15 @@ allocproc(void)
   return 0;
 
 found:
+  p->level = 2;
+  uint now;
+  acquire(&tickslock);
+  now = ticks;
+  release(&tickslock);
+  p->arrTime = now;
+  p->ticket = 10;
+  p->cycleNum = 1;
+  p->remaining_priority = 1;
   p->state = EMBRYO;
   p->pid = nextpid++;
 
@@ -365,6 +373,123 @@ int get_children_of(int pid)
   return concat_children;
 }
 
+void run_p(struct cpu *c, struct proc *p)
+{
+  if (p->state != RUNNABLE)
+    return;
+
+  // Switch to chosen process.  It is the process's job
+  // to release ptable.lock and then reacquire it
+  // before jumping back to us.
+  c->proc = p;
+  switchuvm(p);
+  p->state = RUNNING;
+
+  swtch(&(c->scheduler), p->context);
+  switchkvm();
+
+  // Process is done running for now.
+  // It should have changed its p->state before coming back.
+  c->proc = 0;
+}
+
+void run_third_level_processes()
+{
+  struct proc *p;
+  struct cpu *c = mycpu();
+  double min_priority = 1e9;
+  int min_priority_pid = -1;
+  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+  {
+    if (p->level == 2)
+    {
+      if (p->remaining_priority < min_priority)
+      {
+        min_priority = p->remaining_priority;
+        min_priority_pid = p->pid;
+      }
+    }
+  }
+  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+  {
+    if (p->pid == min_priority_pid)
+    {
+      if (p->remaining_priority - 0.1 >= 0)
+      {
+        p->remaining_priority -= 0.1;
+      }
+      run_p(c, p);
+    }
+  }
+}
+
+void run_second_level_processes()
+{
+  struct proc *p;
+  struct cpu *c = mycpu();
+  uint now;
+
+  acquire(&tickslock);
+  now = ticks;
+  release(&tickslock);
+  double max_hrrn = -1;
+  double curr_hrrn = 0;
+  int max_hrrn_pid = -1;
+  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+  {
+    if (p->level == 1)
+    {
+      double waiting_time = now - p->arrTime;
+      curr_hrrn = waiting_time / p->cycleNum;
+      if (curr_hrrn > max_hrrn)
+      {
+        max_hrrn = curr_hrrn;
+        max_hrrn_pid = p->pid;
+      }
+    }
+  }
+  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+  {
+    if (p->pid == max_hrrn_pid)
+    {
+      p->cycleNum++;
+      run_p(c, p);
+    }
+  }
+}
+
+void run_first_level_processes()
+{
+  struct proc *p;
+  struct cpu *c = mycpu();
+  int random_ticket = 0;
+  int random_counter = 0;
+  int max_ticket_number = 0;
+  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+  {
+    if (p->level == 0)
+    {
+      max_ticket_number += p->ticket;
+    }
+  }
+  uint rand;
+  acquire(&tickslock);
+  rand = ticks;
+  release(&tickslock);
+  random_ticket = (rand * 11 + 13) % max_ticket_number + 1;
+  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+  {
+    if (p->level == 0)
+    {
+      random_counter += p->ticket;
+      if (random_ticket <= random_counter)
+      {
+        run_p(c, p);
+      }
+    }
+  }
+}
+
 //PAGEBREAK: 42
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
@@ -418,104 +543,6 @@ void scheduler(void)
     }
     release(&ptable.lock);
   }
-}
-
-void run_third_level_processes()
-{
-  struct proc *p;
-  struct cpu *c = mycpu();
-  double min_priority = 1e9;
-  struct proc *min_priority_process;
-  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-  {
-    if (p->level == 2)
-    {
-      if (p->remaining_priority < min_priority)
-      {
-        min_priority = p->remaining_priority;
-        min_priority_process = p;
-      }
-    }
-  }
-  if (min_priority_process->remaining_priority - 0.1 >= 0)
-  {
-    min_priority_process->remaining_priority -= 0.1;
-  }
-  run_p(c, min_priority_process);
-}
-
-void run_second_level_processes()
-{
-  struct proc *p;
-  struct cpu *c = mycpu();
-  time_t now;
-  time(&now);
-  double max_hrrn = -1;
-  double curr_hrrn = 0;
-  struct proc *max_hrrn_process;
-  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-  {
-    if (p->level == 1)
-    {
-      double waiting_time = difftime(now, p->arrTime);
-      curr_hrrn = waiting_time / p->cycleNum;
-      if (curr_hrrn > max_hrrn)
-      {
-        max_hrrn = curr_hrrn;
-        max_hrrn_process = p;
-      }
-    }
-  }
-  max_hrrn_process->cycleNum++;
-  run_p(c, max_hrrn_process);
-}
-
-void run_first_level_processes()
-{
-  struct proc *p;
-  struct cpu *c = mycpu();
-  int random_ticket = 0;
-  int random_counter = 0;
-  int max_ticket_number = 0;
-  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-  {
-    if (p->level == 0)
-    {
-      max_ticket_number += p->ticket;
-    }
-  }
-  random_ticket = rand() % max_ticket_number + 1;
-  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-  {
-    if (p->level == 0)
-    {
-      random_counter += p->ticket;
-      if (random_ticket < random_counter)
-      {
-        run_p(c, p);
-      }
-    }
-  }
-}
-
-void run_p(struct cpu *c, struct proc *p)
-{
-  if (p->state != RUNNABLE)
-    return;
-
-  // Switch to chosen process.  It is the process's job
-  // to release ptable.lock and then reacquire it
-  // before jumping back to us.
-  c->proc = p;
-  switchuvm(p);
-  p->state = RUNNING;
-
-  swtch(&(c->scheduler), p->context);
-  switchkvm();
-
-  // Process is done running for now.
-  // It should have changed its p->state before coming back.
-  c->proc = 0;
 }
 
 // Enter scheduler.  Must hold only ptable.lock
@@ -695,7 +722,7 @@ void procdump(void)
   }
 }
 
-int change_process_level(int pid, int level)
+void change_process_level(int pid, int level)
 {
   struct proc *p;
   for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
@@ -706,7 +733,7 @@ int change_process_level(int pid, int level)
     }
   }
 }
-int set_process_ticket(int pid, int ticket)
+void set_process_ticket(int pid, int ticket)
 {
   struct proc *p;
   for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
@@ -717,7 +744,7 @@ int set_process_ticket(int pid, int ticket)
     }
   }
 }
-int set_process_remaining_priority(int pid, double priority)
+void set_process_remaining_priority(int pid, double priority)
 {
   struct proc *p;
   for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
@@ -728,16 +755,19 @@ int set_process_remaining_priority(int pid, double priority)
     }
   }
 }
-int print_processes_info()
+void print_processes_info()
 {
-  time_t now;
-  time(&now);
+  uint now;
+
+  acquire(&tickslock);
+  now = ticks;
+  release(&tickslock);
   struct proc *p;
   double curr_hrrn = 0;
   cprintf("Name        PID        State        Level        Tickets        CycleNum        HRRN        RemainingPriority");
   for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
   {
-    double waiting_time = difftime(now, p->arrTime);
+    double waiting_time = now - p->arrTime;
     curr_hrrn = waiting_time / p->cycleNum;
     cprintf("%s        %d        %s        %d        %d        %d        %f        %f \n",
             p->name, p->pid, p->state, p->level, p->ticket, p->cycleNum, curr_hrrn, p->remaining_priority);

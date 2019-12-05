@@ -67,7 +67,7 @@ struct proc
   int ticket;
   int arrTime;
   double cycleNum;
-  double remaining_priority;
+  int remaining_priority;
 };
 
 // Process memory is laid out contiguously, low addresses first:
@@ -76,7 +76,7 @@ struct proc
 //   fixed-size stack
 //   expandable heap
 
-int change_process_level(int pid, int level);
-int set_process_ticket(int pid, int ticket);
-int set_process_remaining_priority(int pid, double priority);
-int print_processes_info();
+void change_process_level(int pid, int level);
+void set_process_ticket(int pid, int ticket);
+void set_process_remaining_priority(int pid, double priority);
+void print_processes_info();
