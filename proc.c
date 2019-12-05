@@ -380,9 +380,6 @@ void scheduler(void)
 
   for (;;)
   {
-    int random_ticket = 0;
-    int random_counter = 0;
-    int process_started = 0;
     // Enable interrupts on this processor.
     sti();
 
@@ -390,36 +387,61 @@ void scheduler(void)
     acquire(&ptable.lock);
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
     {
-      int max_ticket_number = 0;
       if (p->level == 0)
       {
-        max_ticket_number += p->ticket;
+        run_first_level_processes();
       }
-      random_ticket = rand() % max_ticket_number + 1;
     }
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
     {
       if (p->level == 0)
       {
-        random_counter += p->ticket;
-        if (random_ticket < random_counter)
-        {
-          process_started = run_p(c, p);
-        }
+        run_second_level_processes();
+      }
+    }
+    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+    {
+      if (p->level == 0)
+      {
+        run_third_level_processes();
       }
     }
     release(&ptable.lock);
-    if (process_started)
+  }
+}
+
+void run_first_level_processes()
+{
+  struct proc *p;
+  struct cpu *c = mycpu();
+  int random_ticket = 0;
+  int random_counter = 0;
+  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+  {
+    int max_ticket_number = 0;
+    if (p->level == 0)
     {
-      continue;
+      max_ticket_number += p->ticket;
+    }
+    random_ticket = rand() % max_ticket_number + 1;
+  }
+  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+  {
+    if (p->level == 0)
+    {
+      random_counter += p->ticket;
+      if (random_ticket < random_counter)
+      {
+        run_p(c, p);
+      }
     }
   }
 }
 
-int run_p(struct cpu *c, struct proc *p)
+void run_p(struct cpu *c, struct proc *p)
 {
   if (p->state != RUNNABLE)
-    return 0;
+    return;
 
   // Switch to chosen process.  It is the process's job
   // to release ptable.lock and then reacquire it
@@ -434,7 +456,6 @@ int run_p(struct cpu *c, struct proc *p)
   // Process is done running for now.
   // It should have changed its p->state before coming back.
   c->proc = 0;
-  return 1;
 }
 
 // Enter scheduler.  Must hold only ptable.lock
