@@ -75,3 +75,8 @@ struct proc
 //   original data and bss
 //   fixed-size stack
 //   expandable heap
+
+int change_process_level(int pid, int level);
+int set_process_ticket(int pid, int ticket);
+int set_process_remaining_priority(int pid, double priority);
+int print_processes_info();

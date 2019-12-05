@@ -6,6 +6,7 @@
 #include "memlayout.h"
 #include "mmu.h"
 #include "proc.h"
+#include <stdlib.h>
 
 int sys_fork(void)
 {
@@ -199,17 +200,34 @@ int sys_get_time(void)
 }
 int sys_change_process_level(void)
 {
-  // TODO
+  int pid, level;
+  if (argint(0, &pid) < 0)
+    return -1;
+  if (argint(0, &level) < 0)
+    return -1;
+  change_process_level(pid, level);
 }
 int sys_set_process_ticket(void)
 {
-  // TODO
+  int pid, ticket;
+  if (argint(0, &pid) < 0)
+    return -1;
+  if (argint(0, &ticket) < 0)
+    return -1;
+  set_process_ticket(pid, ticket);
 }
 int sys_set_process_remaining_priority(void)
 {
-  //  TODO
+  int pid;
+  char *remaining_priority;
+  char *endPtr;
+  if (argint(0, &pid) < 0)
+    return -1;
+  if (argstr(1, &remaining_priority))
+    return -1;
+  set_process_remaining_priority(pid, strtod(remaining_priority, endPtr));
 }
 int sys_print_processes_info(void)
 {
-  //  TODO
+  print_processes_info();
 }

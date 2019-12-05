@@ -694,3 +694,52 @@ void procdump(void)
     cprintf("\n");
   }
 }
+
+int change_process_level(int pid, int level)
+{
+  struct proc *p;
+  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+  {
+    if (p->pid == pid)
+    {
+      p->level = level;
+    }
+  }
+}
+int set_process_ticket(int pid, int ticket)
+{
+  struct proc *p;
+  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+  {
+    if (p->pid == pid)
+    {
+      p->level = ticket;
+    }
+  }
+}
+int set_process_remaining_priority(int pid, double priority)
+{
+  struct proc *p;
+  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+  {
+    if (p->pid == pid)
+    {
+      p->level = priority;
+    }
+  }
+}
+int print_processes_info()
+{
+  time_t now;
+  time(&now);
+  struct proc *p;
+  double curr_hrrn = 0;
+  cprintf("Name        PID        State        Level        Tickets        CycleNum        HRRN        RemainingPriority");
+  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+  {
+    double waiting_time = difftime(now, p->arrTime);
+    curr_hrrn = waiting_time / p->cycleNum;
+    cprintf("%s        %d        %s        %d        %d        %d        %f        %f \n",
+            p->name, p->pid, p->state, p->level, p->ticket, p->cycleNum, curr_hrrn, p->remaining_priority);
+  }
+}
