@@ -7,6 +7,7 @@
 #include "proc.h"
 #include "spinlock.h"
 #include <stdlib.h>
+#include <time.h>
 
 struct
 {
@@ -375,8 +376,6 @@ int get_children_of(int pid)
 void scheduler(void)
 {
   struct proc *p;
-  struct cpu *c = mycpu();
-  c->proc = 0;
 
   for (;;)
   {
@@ -407,6 +406,35 @@ void scheduler(void)
       }
     }
     release(&ptable.lock);
+  }
+}
+
+void run_second_level_processes()
+{
+  struct proc *p;
+  struct cpu *c = mycpu();
+  time_t now;
+  time(&now);
+  double max_hrrn = -1;
+  double curr_hrrn = 0;
+  int max_hrrn_pid = 0;
+  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+  {
+    double waiting_time = difftime(now, p->arrTime);
+    curr_hrrn = waiting_time / p->cycleNum;
+    if (curr_hrrn > max_hrrn)
+    {
+      max_hrrn = curr_hrrn;
+      max_hrrn_pid = p->pid;
+    }
+  }
+  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+  {
+    if (p->pid == max_hrrn_pid)
+    {
+      p->cycleNum += 1;
+      run_p(c, p);
+    }
   }
 }
 

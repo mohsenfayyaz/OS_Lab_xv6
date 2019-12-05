@@ -66,7 +66,7 @@ struct proc
   int level;
   int ticket;
   int arrTime;
-  int cycleNum;
+  double cycleNum;
   double remaining_priority;
 };
 
