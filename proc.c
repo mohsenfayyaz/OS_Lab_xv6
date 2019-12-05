@@ -465,18 +465,15 @@ void run_first_level_processes()
   struct cpu *c = mycpu();
   int random_ticket = 0;
   int random_counter = 0;
+  int max_ticket_number = 0;
   for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
   {
     if (p->level == 0)
     {
-      int max_ticket_number = 0;
-      if (p->level == 0)
-      {
-        max_ticket_number += p->ticket;
-      }
-      random_ticket = rand() % max_ticket_number + 1;
+      max_ticket_number += p->ticket;
     }
   }
+  random_ticket = rand() % max_ticket_number + 1;
   for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
   {
     if (p->level == 0)
