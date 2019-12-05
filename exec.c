@@ -160,6 +160,7 @@ int exec(char *path, char **argv)
   oldpgdir = curproc->pgdir;
   curproc->pgdir = pgdir;
   curproc->sz = sz;
+  curproc->level = 0;
   curproc->ticket = 1e5;
   curproc->tf->eip = elf.entry; // main
   curproc->tf->esp = sp;

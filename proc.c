@@ -89,7 +89,7 @@ allocproc(void)
   return 0;
 
 found:
-  p->level = 2;
+  p->level = 0;
   uint now;
   acquire(&tickslock);
   now = ticks;
