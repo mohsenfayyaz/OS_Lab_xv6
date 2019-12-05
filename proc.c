@@ -393,20 +393,44 @@ void scheduler(void)
     }
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
     {
-      if (p->level == 0)
+      if (p->level == 1)
       {
         run_second_level_processes();
       }
     }
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
     {
-      if (p->level == 0)
+      if (p->level == 2)
       {
         run_third_level_processes();
       }
     }
     release(&ptable.lock);
   }
+}
+
+void run_third_level_processes()
+{
+  struct proc *p;
+  struct cpu *c = mycpu();
+  double min_priority = 1e9;
+  struct proc *min_priority_process;
+  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+  {
+    if (p->level == 2)
+    {
+      if (p->remaining_priority < min_priority)
+      {
+        min_priority = p->remaining_priority;
+        min_priority_process = p;
+      }
+    }
+  }
+  if (min_priority_process->remaining_priority - 0.1 >= 0)
+  {
+    min_priority_process->remaining_priority -= 0.1;
+  }
+  run_p(c, min_priority_process);
 }
 
 void run_second_level_processes()
@@ -417,25 +441,22 @@ void run_second_level_processes()
   time(&now);
   double max_hrrn = -1;
   double curr_hrrn = 0;
-  int max_hrrn_pid = 0;
+  struct proc *max_hrrn_process;
   for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
   {
-    double waiting_time = difftime(now, p->arrTime);
-    curr_hrrn = waiting_time / p->cycleNum;
-    if (curr_hrrn > max_hrrn)
+    if (p->level == 1)
     {
-      max_hrrn = curr_hrrn;
-      max_hrrn_pid = p->pid;
+      double waiting_time = difftime(now, p->arrTime);
+      curr_hrrn = waiting_time / p->cycleNum;
+      if (curr_hrrn > max_hrrn)
+      {
+        max_hrrn = curr_hrrn;
+        max_hrrn_process = p;
+      }
     }
   }
-  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-  {
-    if (p->pid == max_hrrn_pid)
-    {
-      p->cycleNum += 1;
-      run_p(c, p);
-    }
-  }
+  max_hrrn_process->cycleNum++;
+  run_p(c, max_hrrn_process);
 }
 
 void run_first_level_processes()
@@ -446,12 +467,15 @@ void run_first_level_processes()
   int random_counter = 0;
   for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
   {
-    int max_ticket_number = 0;
     if (p->level == 0)
     {
-      max_ticket_number += p->ticket;
+      int max_ticket_number = 0;
+      if (p->level == 0)
+      {
+        max_ticket_number += p->ticket;
+      }
+      random_ticket = rand() % max_ticket_number + 1;
     }
-    random_ticket = rand() % max_ticket_number + 1;
   }
   for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
   {
