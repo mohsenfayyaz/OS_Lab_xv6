@@ -105,6 +105,10 @@ extern int sys_get_children(void);
 extern int sys_set_path(void);
 extern int sys_set_sleep(void);
 extern int sys_get_time(void);
+extern int sys_change_process_level(void);
+extern int sys_set_process_ticket(void);
+extern int sys_set_process_remaining_priority(void);
+extern int sys_print_processes_info(void);
 
 static int (*syscalls[])(void) = {
     [SYS_fork] sys_fork,
@@ -133,8 +137,11 @@ static int (*syscalls[])(void) = {
     [SYS_get_children] sys_get_children,
     [SYS_set_path] sys_set_path,
     [SYS_set_sleep] sys_set_sleep,
-    [SYS_get_time] sys_get_time
-    };
+    [SYS_get_time] sys_get_time,
+    [SYS_change_process_level] sys_change_process_level,
+    [SYS_set_process_ticket] sys_set_process_ticket,
+    [SYS_set_process_remaining_priority] sys_set_process_remaining_priority,
+    [SYS_print_processes_info] sys_print_processes_info};
 
 void syscall(void)
 {

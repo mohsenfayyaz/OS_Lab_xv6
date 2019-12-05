@@ -29,6 +29,10 @@ int get_children(int);
 void set_path(char *);
 void set_sleep(int);
 int get_time(void);
+void change_process_level(int, int);
+void set_process_ticket(int, int);
+void set_process_remaining_priority(int, char *);
+void print_processes_info(void);
 
 // ulib.c
 int stat(const char *, struct stat *);

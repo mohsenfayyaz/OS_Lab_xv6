@@ -26,3 +26,7 @@
 #define SYS_set_path 25
 #define SYS_set_sleep 26
 #define SYS_get_time 27
+#define SYS_change_process_level 28
+#define SYS_set_process_ticket 29
+#define SYS_set_process_remaining_priority 30
+#define SYS_print_processes_info 31

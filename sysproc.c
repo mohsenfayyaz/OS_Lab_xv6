@@ -108,11 +108,13 @@ int sys_get_parent_id(void)
   return myproc()->parent->pid;
 }
 
-
-int pow2(int a, int n){
-  if(n==0) return 1;
-  int p=a;
-  for(int i = 1; i<n; i++){
+int pow2(int a, int n)
+{
+  if (n == 0)
+    return 1;
+  int p = a;
+  for (int i = 1; i < n; i++)
+  {
     p = p * a;
   }
   return p;
@@ -127,10 +129,11 @@ int sys_get_children(void)
   int grandchildren = 0;
   int grand_counter = 0;
   int exploring_queue = pid;
-  while(exploring_queue > 0 || pid == 0){
-    if(pid == 0)
+  while (exploring_queue > 0 || pid == 0)
+  {
+    if (pid == 0)
       pid = -1;
-    int children = get_children_of(exploring_queue%10);
+    int children = get_children_of(exploring_queue % 10);
     // cprintf("%d|%d|%d\n", exploring_queue, exploring_queue%10, get_children_of(exploring_queue%10));
     exploring_queue /= 10;
 
@@ -142,12 +145,13 @@ int sys_get_children(void)
       temp_children /= 10;
       grand_counter++;
 
-      exploring_queue = exploring_queue*10 + new_child_id;
+      exploring_queue = exploring_queue * 10 + new_child_id;
     }
   }
   // cprintf("|%d|%d|\n", pid, children);
   // return children;
-  if (grandchildren == 0){
+  if (grandchildren == 0)
+  {
     return -1;
   }
   return grandchildren;
@@ -163,7 +167,6 @@ int sys_set_path(void)
   add_path(arg);
   return 0;
 }
-
 
 int sys_set_sleep(void)
 {
@@ -188,9 +191,25 @@ int sys_set_sleep(void)
 int sys_get_time(void)
 {
   struct rtcdate *t;
-  if(argptr(0, (void*)&t, sizeof(&t)) < 0)
+  if (argptr(0, (void *)&t, sizeof(&t)) < 0)
     return -1;
   cmostime(t);
   int second = t->second + t->minute * 60 + t->hour * 3600;
   return second;
+}
+int sys_change_process_level(void)
+{
+  // TODO
+}
+int sys_set_process_ticket(void)
+{
+  // TODO
+}
+int sys_set_process_remaining_priority(void)
+{
+  //  TODO
+}
+int sys_print_processes_info(void)
+{
+  //  TODO
 }
