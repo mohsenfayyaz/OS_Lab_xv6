@@ -381,27 +381,38 @@ void scheduler(void)
   {
     // Enable interrupts on this processor.
     sti();
-
+    int running_level = -1;
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
     {
       if (p->level == 0)
       {
+        running_level = 0;
         run_first_level_processes();
       }
+    }
+    if (running_level == 0)
+    {
+      continue;
     }
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
     {
       if (p->level == 1)
       {
+        running_level = 1;
         run_second_level_processes();
       }
+    }
+    if (running_level == 1)
+    {
+      continue;
     }
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
     {
       if (p->level == 2)
       {
+        running_level = 2;
         run_third_level_processes();
       }
     }
