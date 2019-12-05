@@ -382,6 +382,7 @@ void scheduler(void)
   {
     int random_ticket = 0;
     int random_counter = 0;
+    int process_started = 0;
     // Enable interrupts on this processor.
     sti();
 
@@ -403,18 +404,22 @@ void scheduler(void)
         random_counter += p->ticket;
         if (random_ticket < random_counter)
         {
-          run_p(c, p);
+          process_started = run_p(c, p);
         }
       }
     }
+    release(&ptable.lock);
+    if (process_started)
+    {
+      continue;
+    }
   }
-  release(&ptable.lock);
 }
 
-void run_p(struct cpu *c, struct proc *p)
+int run_p(struct cpu *c, struct proc *p)
 {
   if (p->state != RUNNABLE)
-    return;
+    return 0;
 
   // Switch to chosen process.  It is the process's job
   // to release ptable.lock and then reacquire it
@@ -429,6 +434,7 @@ void run_p(struct cpu *c, struct proc *p)
   // Process is done running for now.
   // It should have changed its p->state before coming back.
   c->proc = 0;
+  return 1;
 }
 
 // Enter scheduler.  Must hold only ptable.lock
