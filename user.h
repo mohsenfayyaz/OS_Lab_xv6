@@ -31,7 +31,7 @@ void set_sleep(int);
 int get_time(void);
 void change_process_level(int, int);
 void set_process_ticket(int, int);
-void set_process_remaining_priority(int, char *);
+void set_process_remaining_priority(int, int);
 void print_processes_info(void);
 
 // ulib.c

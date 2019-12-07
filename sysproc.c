@@ -197,6 +197,7 @@ int sys_get_time(void)
   int second = t->second + t->minute * 60 + t->hour * 3600;
   return second;
 }
+
 int sys_change_process_level(void)
 {
   int pid, level;
@@ -207,6 +208,7 @@ int sys_change_process_level(void)
   change_process_level(pid, level);
   return 0;
 }
+
 int sys_set_process_ticket(void)
 {
   int pid, ticket;
@@ -217,6 +219,7 @@ int sys_set_process_ticket(void)
   set_process_ticket(pid, ticket);
   return 0;
 }
+
 int sys_set_process_remaining_priority(void)
 {
   int pid, remaining_priority;
@@ -227,6 +230,7 @@ int sys_set_process_remaining_priority(void)
   set_process_remaining_priority(pid, remaining_priority);
   return 0;
 }
+
 int sys_print_processes_info(void)
 {
   print_processes_info();

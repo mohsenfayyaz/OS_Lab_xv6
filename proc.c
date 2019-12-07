@@ -97,7 +97,7 @@ found:
   p->arrTime = now;
   p->ticket = 10;
   p->cycleNum = 1;
-  p->remaining_priority = 1;
+  p->remaining_priority = 10;
   p->state = EMBRYO;
   p->pid = nextpid++;
 
@@ -414,9 +414,9 @@ void run_third_level_processes()
   {
     if (p->pid == min_priority_pid)
     {
-      if (p->remaining_priority - 0.1 >= 0)
+      if (p->remaining_priority - 1 >= 0)
       {
-        p->remaining_priority -= 0.1;
+        p->remaining_priority -= 1;
       }
       run_p(c, p);
     }
@@ -501,6 +501,8 @@ void run_first_level_processes()
 void scheduler(void)
 {
   struct proc *p;
+  struct cpu *c = mycpu();
+  c->proc = 0;
 
   for (;;)
   {
@@ -519,6 +521,7 @@ void scheduler(void)
     }
     if (running_level == 0)
     {
+      release(&ptable.lock);
       continue;
     }
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
@@ -531,6 +534,7 @@ void scheduler(void)
     }
     if (running_level == 1)
     {
+      release(&ptable.lock);
       continue;
     }
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
@@ -740,18 +744,18 @@ void set_process_ticket(int pid, int ticket)
   {
     if (p->pid == pid)
     {
-      p->level = ticket;
+      p->ticket = ticket;
     }
   }
 }
-void set_process_remaining_priority(int pid, double priority)
+void set_process_remaining_priority(int pid, int priority)
 {
   struct proc *p;
   for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
   {
     if (p->pid == pid)
     {
-      p->level = priority;
+      p->remaining_priority = priority;
     }
   }
 }
@@ -770,6 +774,6 @@ void print_processes_info()
     double waiting_time = now - p->arrTime;
     curr_hrrn = waiting_time / p->cycleNum;
     cprintf("%s        %d        %s        %d        %d        %d        %f        %f \n",
-            p->name, p->pid, p->state, p->level, p->ticket, p->cycleNum, curr_hrrn, p->remaining_priority);
+            p->name, p->pid, p->state, p->level, p->ticket, p->cycleNum, curr_hrrn, (double)p->remaining_priority/10);
   }
 }

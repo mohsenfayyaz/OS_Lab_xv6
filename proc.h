@@ -78,5 +78,5 @@ struct proc
 
 void change_process_level(int pid, int level);
 void set_process_ticket(int pid, int ticket);
-void set_process_remaining_priority(int pid, double priority);
+void set_process_remaining_priority(int pid, int priority);
 void print_processes_info();
