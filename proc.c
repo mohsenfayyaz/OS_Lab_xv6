@@ -379,6 +379,7 @@ void run_p(struct cpu *c, struct proc *p)
   if (p->state != RUNNABLE)
     return;
 
+  // p->cycleNum++;
   // Switch to chosen process.  It is the process's job
   // to release ptable.lock and then reacquire it
   // before jumping back to us.
@@ -438,7 +439,7 @@ void run_second_level_processes()
   int max_hrrn_pid = -1;
   for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
   {
-    if (p->level == 1)
+    if (p->level == 1 && p->state == RUNNABLE)
     {
       double waiting_time = now - p->arrTime;
       curr_hrrn = waiting_time / p->cycleNum;
@@ -844,10 +845,11 @@ void print_processes_info()
     double waiting_time = now - p->arrTime;
     curr_hrrn = waiting_time / p->cycleNum;
     ftoa(curr_hrrn, hrrn_str, 2);
+    ftoa((float)p->cycleNum, cycle_str, 2);
     ftoa((float)p->remaining_priority/10, priority_str, 1);
-    ftoa((float)p->cycleNum, cycle_str, 1);
-    cprintf("%s        %d        %s        %d        %d        %s",
-            p->name, p->pid, states[p->state], p->level, p->ticket, cycle_str);
+    cprintf("%s        %d        %s        %d        %d",
+            p->name, p->pid, states[p->state], p->level, p->ticket);
+    cprintf("        %s", cycle_str);
     cprintf("        %s        %s \n", hrrn_str, priority_str);
   }
 }
