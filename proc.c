@@ -401,7 +401,7 @@ void run_third_level_processes()
   int min_priority_pid = -1;
   for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
   {
-    if (p->level == 2)
+    if (p->level == 2 && p->state == RUNNABLE)
     {
       if (p->remaining_priority < min_priority)
       {
