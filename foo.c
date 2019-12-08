@@ -5,13 +5,13 @@
 
 int main(int argc, char *argv[])
 {
-  int child_count = atoi(argv[1]);
+  int child_count = argc == 4 ? atoi(argv[1]) : 10;
   if(child_count > 100) {
     printf(1, "child count should be less than 100\n");
     exit();
   }
-  int for_duration = atoi(argv[2]);
-  int level = atoi(argv[3]);
+  int for_duration = argc == 4 ? atoi(argv[2]) : 1000000000;
+  int level = argc == 4 ? atoi(argv[3]) : 0;
   int is_child = 0;
   for(int i = 0; i < child_count; i++) {
     int pid = fork();
