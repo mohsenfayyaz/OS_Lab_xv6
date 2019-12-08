@@ -438,7 +438,7 @@ void run_second_level_processes()
   int max_hrrn_pid = -1;
   for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
   {
-    if (p->level == 1)
+    if (p->level == 1 && p->state == RUNNABLE)
     {
       double waiting_time = now - p->arrTime;
       curr_hrrn = waiting_time / p->cycleNum;
