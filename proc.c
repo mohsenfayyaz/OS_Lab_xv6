@@ -97,7 +97,7 @@ found:
   p->arrTime = now;
   p->ticket = 10;
   p->cycleNum = 1;
-  p->remaining_priority = 10;
+  p->remaining_priority = 1000;
   p->state = EMBRYO;
   p->pid = nextpid++;
 
@@ -397,7 +397,7 @@ void run_third_level_processes()
 {
   struct proc *p;
   struct cpu *c = mycpu();
-  double min_priority = 1e9;
+  int min_priority = 1000000000;
   int min_priority_pid = -1;
   for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
   {
@@ -508,40 +508,26 @@ void scheduler(void)
   {
     // Enable interrupts on this processor.
     sti();
-    int running_level = -1;
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
     {
-      if (p->level == 0)
+      if (p->level == 0 && p->state == RUNNABLE)
       {
-        running_level = 0;
         run_first_level_processes();
       }
     }
-    if (running_level == 0)
-    {
-      release(&ptable.lock);
-      continue;
-    }
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
     {
-      if (p->level == 1)
+      if (p->level == 1 && p->state == RUNNABLE)
       {
-        running_level = 1;
         run_second_level_processes();
       }
     }
-    if (running_level == 1)
-    {
-      release(&ptable.lock);
-      continue;
-    }
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
     {
-      if (p->level == 2)
+      if (p->level == 2 && p->state == RUNNABLE)
       {
-        running_level = 2;
         run_third_level_processes();
       }
     }
@@ -759,21 +745,89 @@ void set_process_remaining_priority(int pid, int priority)
     }
   }
 }
+
+void reverse(char* str, int len) 
+{ 
+    int i = 0, j = len - 1, temp; 
+    while (i < j) { 
+        temp = str[i]; 
+        str[i] = str[j]; 
+        str[j] = temp; 
+        i++; 
+        j--; 
+    } 
+} 
+// Converts a given integer x to string str[].  
+// d is the number of digits required in the output.  
+// If d is more than the number of digits in x,  
+// then 0s are added at the beginning. 
+int intToStr(int x, char* str, int d) 
+{ 
+    int i = 0; 
+    while (x) { 
+        str[i++] = (x % 10) + '0'; 
+        x = x / 10; 
+    } 
+  
+    // If number of digits required is more, then 
+    // add 0s at the beginning 
+    while (i < d) 
+        str[i++] = '0'; 
+  
+    reverse(str, i); 
+    str[i] = '\0'; 
+    return i; 
+} 
+  
+// Converts a floating-point/double number to a string. 
+void ftoa(float n, char* res, int afterpoint) 
+{ 
+    // Extract integer part 
+    int ipart = (int)n; 
+  
+    // Extract floating part 
+    float fpart = n - (float)ipart; 
+  
+    // convert integer part to string 
+    int i = intToStr(ipart, res, 0); 
+  
+    // check for display option after point 
+    int pwr = 1;
+    while(afterpoint > 0) {
+      pwr *= 10;
+      afterpoint--;
+    }
+    res[i] = '.'; // add dot 
+    fpart = fpart * pwr; 
+  
+    intToStr((int)fpart, res + i + 1, afterpoint); 
+} 
+
 void print_processes_info()
 {
   uint now;
-
+  static char *states[] = {
+    [UNUSED]    " UNUSED ",
+    [EMBRYO]    " EMBRYO ",
+    [SLEEPING]  "SLEEPING",
+    [RUNNABLE]  "RUNNABLE",
+    [RUNNING]   "RUNNING ",
+    [ZOMBIE]    " ZOMBIE "
+  };
   acquire(&tickslock);
   now = ticks;
   release(&tickslock);
   struct proc *p;
   double curr_hrrn = 0;
-  cprintf("Name        PID        State        Level        Tickets        CycleNum        HRRN        RemainingPriority");
+  static char hrrn_str[30];
+  cprintf("Name        PID        State        Level        Tickets        CycleNum        HRRN        RemainingPriority\n");
   for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
   {
     double waiting_time = now - p->arrTime;
     curr_hrrn = waiting_time / p->cycleNum;
-    cprintf("%s        %d        %s        %d        %d        %d        %f        %f \n",
-            p->name, p->pid, p->state, p->level, p->ticket, p->cycleNum, curr_hrrn, (double)p->remaining_priority/10);
+    ftoa(curr_hrrn, hrrn_str, 3);
+    cprintf("%s\n", hrrn_str);
+    cprintf("%s        %d        %s        %d        %d        %d        %s        %f \n",
+            p->name, p->pid, states[p->state], p->level, p->ticket, p->cycleNum, hrrn_str, (double)p->remaining_priority/10);
   }
 }
