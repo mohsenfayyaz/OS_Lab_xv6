@@ -26,17 +26,14 @@ int main(int argc, char *argv[])
       printf(1, "error forking\n");
     }
   }
-  if (is_child == 0) {
-    print_processes_info();
-  }
   int c = 2;
   for(int i = 0; i < for_duration; i++)
     c *= 2;
   if (is_child == 0) {
-    int pid = getpid();
     for(int i = 0; i < child_count; i++) {
       wait();
     }
+    int pid = getpid();
     change_process_level(pid, level);
   }
 

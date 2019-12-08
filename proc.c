@@ -97,7 +97,7 @@ found:
   p->arrTime = now;
   p->ticket = 10;
   p->cycleNum = 1;
-  p->remaining_priority = 1000;
+  p->remaining_priority = 10;
   p->state = EMBRYO;
   p->pid = nextpid++;
 
@@ -681,35 +681,36 @@ int kill(int pid)
 // No lock to avoid wedging a stuck machine further.
 void procdump(void)
 {
-  static char *states[] = {
-      [UNUSED] "unused",
-      [EMBRYO] "embryo",
-      [SLEEPING] "sleep ",
-      [RUNNABLE] "runble",
-      [RUNNING] "run   ",
-      [ZOMBIE] "zombie"};
-  int i;
-  struct proc *p;
-  char *state;
-  uint pc[10];
+  // static char *states[] = {
+  //     [UNUSED] "unused",
+  //     [EMBRYO] "embryo",
+  //     [SLEEPING] "sleep ",
+  //     [RUNNABLE] "runble",
+  //     [RUNNING] "run   ",
+  //     [ZOMBIE] "zombie"};
+  // int i;
+  // struct proc *p;
+  // char *state;
+  // uint pc[10];
 
-  for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-  {
-    if (p->state == UNUSED)
-      continue;
-    if (p->state >= 0 && p->state < NELEM(states) && states[p->state])
-      state = states[p->state];
-    else
-      state = "???";
-    cprintf("%d %s %s", p->pid, state, p->name);
-    if (p->state == SLEEPING)
-    {
-      getcallerpcs((uint *)p->context->ebp + 2, pc);
-      for (i = 0; i < 10 && pc[i] != 0; i++)
-        cprintf(" %p", pc[i]);
-    }
-    cprintf("\n");
-  }
+  // for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+  // {
+  //   if (p->state == UNUSED)
+  //     continue;
+  //   if (p->state >= 0 && p->state < NELEM(states) && states[p->state])
+  //     state = states[p->state];
+  //   else
+  //     state = "???";
+  //   cprintf("%d %s %s", p->pid, state, p->name);
+  //   if (p->state == SLEEPING)
+  //   {
+  //     getcallerpcs((uint *)p->context->ebp + 2, pc);
+  //     for (i = 0; i < 10 && pc[i] != 0; i++)
+  //       cprintf(" %p", pc[i]);
+  //   }
+  //   cprintf("\n");
+  // }
+  print_processes_info();
 }
 
 void change_process_level(int pid, int level)
@@ -764,6 +765,9 @@ void reverse(char* str, int len)
 int intToStr(int x, char* str, int d) 
 { 
     int i = 0; 
+    if(x == 0) {
+      str[i++] = '0';
+    }
     while (x) { 
         str[i++] = (x % 10) + '0'; 
         x = x / 10; 
@@ -793,9 +797,8 @@ void ftoa(float n, char* res, int afterpoint)
   
     // check for display option after point 
     int pwr = 1;
-    while(afterpoint > 0) {
+    for(int j = 0; j < afterpoint; j++) {
       pwr *= 10;
-      afterpoint--;
     }
     res[i] = '.'; // add dot 
     fpart = fpart * pwr; 
@@ -819,15 +822,19 @@ void print_processes_info()
   release(&tickslock);
   struct proc *p;
   double curr_hrrn = 0;
-  static char hrrn_str[30];
+  static char hrrn_str[30], priority_str[30];
   cprintf("Name        PID        State        Level        Tickets        CycleNum        HRRN        RemainingPriority\n");
   for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
   {
+    if(p->state == UNUSED) {
+      continue;
+    }
     double waiting_time = now - p->arrTime;
     curr_hrrn = waiting_time / p->cycleNum;
-    ftoa(curr_hrrn, hrrn_str, 3);
-    cprintf("%s\n", hrrn_str);
-    cprintf("%s        %d        %s        %d        %d        %d        %s        %f \n",
-            p->name, p->pid, states[p->state], p->level, p->ticket, p->cycleNum, hrrn_str, (double)p->remaining_priority/10);
+    ftoa(curr_hrrn, hrrn_str, 2);
+    ftoa((float)p->remaining_priority/10, priority_str, 1);
+    cprintf("%s        %d        %s        %d        %d        %d",
+            p->name, p->pid, states[p->state], p->level, p->ticket, p->cycleNum);
+    cprintf("        %s        %s \n", hrrn_str, priority_str);
   }
 }
