@@ -378,6 +378,7 @@ void run_p(struct cpu *c, struct proc *p)
   if (p->state != RUNNABLE)
     return;
 
+  p->cycleNum++;
   // Switch to chosen process.  It is the process's job
   // to release ptable.lock and then reacquire it
   // before jumping back to us.
@@ -452,7 +453,6 @@ void run_second_level_processes()
   {
     if (p->pid == max_hrrn_pid)
     {
-      p->cycleNum++;
       run_p(c, p);
     }
   }
@@ -833,7 +833,7 @@ void print_processes_info()
   release(&tickslock);
   struct proc *p;
   double curr_hrrn = 0;
-  static char hrrn_str[30], priority_str[30];
+  static char hrrn_str[30], priority_str[30], cycle_str[30];
   cprintf("Name        PID        State        Level        Tickets        CycleNum        HRRN        RemainingPriority\n");
   for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
   {
@@ -843,9 +843,11 @@ void print_processes_info()
     double waiting_time = now - p->arrTime;
     curr_hrrn = waiting_time / p->cycleNum;
     ftoa(curr_hrrn, hrrn_str, 2);
+    ftoa((float)p->cycleNum, cycle_str, 2);
     ftoa((float)p->remaining_priority/10, priority_str, 1);
-    cprintf("%s        %d        %s        %d        %d        %d",
-            p->name, p->pid, states[p->state], p->level, p->ticket, p->cycleNum);
+    cprintf("%s        %d        %s        %d        %d",
+            p->name, p->pid, states[p->state], p->level, p->ticket);
+    cprintf("        %s", cycle_str);
     cprintf("        %s        %s \n", hrrn_str, priority_str);
   }
 }
