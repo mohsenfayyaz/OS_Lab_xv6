@@ -42,3 +42,4 @@ SYSCALL(print_processes_info)
 
 SYSCALL(barrier_init)
 SYSCALL(barrier_wait)
+SYSCALL(reentrant_spinlock_test)

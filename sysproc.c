@@ -252,3 +252,8 @@ int sys_barrier_wait(void){
   barrier_wait();
   return 0;
 }
+
+int sys_reentrant_spinlock_test(void){
+  reentrant_spinlock_test();
+  return 0;
+}

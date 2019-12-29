@@ -882,3 +882,15 @@ void barrier_wait(){
     wakeup(&barrier);
   }
 }
+
+void reentrant_spinlock_test(){
+  cprintf("Kernel: spinlock init!\n");
+  struct spinlock lock;
+  initlock(&lock, "splinlock");
+  acquire_reentrant(&lock);
+  acquire_reentrant(&lock);
+  // acquire(&lock);
+  // acquire(&lock);
+  release(&lock);
+  cprintf("Kernel: spinlock release!\n");
+}

@@ -112,6 +112,7 @@ extern int sys_print_processes_info(void);
 //  Lab 04
 extern int sys_barrier_init(void);
 extern int sys_barrier_wait(void);
+extern int sys_reentrant_spinlock_test(void);
 
 static int (*syscalls[])(void) = {
     [SYS_fork] sys_fork,
@@ -146,7 +147,8 @@ static int (*syscalls[])(void) = {
     [SYS_set_process_remaining_priority] sys_set_process_remaining_priority,
     [SYS_print_processes_info] sys_print_processes_info,
     [SYS_barrier_init] sys_barrier_init,
-    [SYS_barrier_wait] sys_barrier_wait
+    [SYS_barrier_wait] sys_barrier_wait,
+    [SYS_reentrant_spinlock_test] sys_reentrant_spinlock_test
     };
 
 void syscall(void)

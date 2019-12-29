@@ -46,9 +46,15 @@ void
 acquire_reentrant(struct spinlock *lk)
 {
   pushcli(); // disable interrupts to avoid deadlock.
-  if(lk->pid != myproc()->pid)
-    if(holding(lk))
-      panic("acquire");
+    
+  if(holding(lk)){  // this_cpu = locker_cpu
+    if(lk->pid == myproc()->pid){  // it's the same process!!
+      popcli();
+      return ;
+    }else{
+      panic("acquire");  // some other process on this cpu
+    }
+  }
 
   // The xchg is atomic.
   while(xchg(&lk->locked, 1) != 0)

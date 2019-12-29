@@ -15,7 +15,7 @@
 #define COMMAND_PATH "path"
 #define COMMAND_SLEEP "sleep"
 #define COMMAND_BARRIER "barrier"
-#define COMMAND_REENTRANT "r"
+#define COMMAND_REENTRANT "reentrant"
 
 int main(int argc, char *argv[])
 {
@@ -118,8 +118,9 @@ int main(int argc, char *argv[])
 
     if (strcmp(argv[1], COMMAND_REENTRANT)  == 0)
     {
-        printf(1, "user: starting reentrant ... \n");
-        
+        printf(1, "user: starting reentrant spinlock test ... \n");
+        reentrant_spinlock_test();
+        printf(1, "user: test completed ... \n");
         exit();
     }
 

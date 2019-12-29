@@ -32,5 +32,5 @@
 #define SYS_print_processes_info 31
 // Lab 04
 #define SYS_barrier_init 32
-// #define SYS_barrier_wait 33
-// #define SYS_reentrant_spinlock_test 34
+#define SYS_barrier_wait 33
+#define SYS_reentrant_spinlock_test 34

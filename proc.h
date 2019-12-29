@@ -83,3 +83,4 @@ void print_processes_info();
 
 void barrier_init(int barrier_count);
 void barrier_wait();
+void reentrant_spinlock_test();

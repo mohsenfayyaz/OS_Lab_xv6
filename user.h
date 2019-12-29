@@ -36,6 +36,7 @@ void print_processes_info(void);
 
 void barrier_init(int);
 void barrier_wait(void);
+void reentrant_spinlock_test(void);
 
 // ulib.c
 int stat(const char *, struct stat *);
