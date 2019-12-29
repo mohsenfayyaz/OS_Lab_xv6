@@ -34,6 +34,9 @@ void set_process_ticket(int, int);
 void set_process_remaining_priority(int, int);
 void print_processes_info(void);
 
+void barrier_init(int);
+void barrier_wait(void);
+
 // ulib.c
 int stat(const char *, struct stat *);
 char *strcpy(char *, const char *);

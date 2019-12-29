@@ -39,3 +39,6 @@ SYSCALL(change_process_level)
 SYSCALL(set_process_ticket)
 SYSCALL(set_process_remaining_priority)
 SYSCALL(print_processes_info)
+
+SYSCALL(barrier_init)
+SYSCALL(barrier_wait)

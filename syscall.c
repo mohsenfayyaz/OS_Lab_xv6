@@ -109,6 +109,9 @@ extern int sys_change_process_level(void);
 extern int sys_set_process_ticket(void);
 extern int sys_set_process_remaining_priority(void);
 extern int sys_print_processes_info(void);
+//  Lab 04
+extern int sys_barrier_init(void);
+extern int sys_barrier_wait(void);
 
 static int (*syscalls[])(void) = {
     [SYS_fork] sys_fork,
@@ -141,7 +144,10 @@ static int (*syscalls[])(void) = {
     [SYS_change_process_level] sys_change_process_level,
     [SYS_set_process_ticket] sys_set_process_ticket,
     [SYS_set_process_remaining_priority] sys_set_process_remaining_priority,
-    [SYS_print_processes_info] sys_print_processes_info};
+    [SYS_print_processes_info] sys_print_processes_info,
+    [SYS_barrier_init] sys_barrier_init,
+    [SYS_barrier_wait] sys_barrier_wait
+    };
 
 void syscall(void)
 {

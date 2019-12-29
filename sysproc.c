@@ -236,3 +236,19 @@ int sys_print_processes_info(void)
   print_processes_info();
   return 0;
 }
+
+
+//  Lab 04
+int sys_barrier_init(void){
+  int barrier_count;
+  if (argint(0, &barrier_count) < 0)
+    return -1;
+
+  barrier_init(barrier_count);
+  return 0;
+}
+
+int sys_barrier_wait(void){
+  barrier_wait();
+  return 0;
+}

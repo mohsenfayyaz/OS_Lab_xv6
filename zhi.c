@@ -14,6 +14,8 @@
 #define COMMAND_CHILDREN "children"
 #define COMMAND_PATH "path"
 #define COMMAND_SLEEP "sleep"
+#define COMMAND_BARRIER "barrier"
+#define COMMAND_REENTRANT "r"
 
 int main(int argc, char *argv[])
 {
@@ -95,6 +97,29 @@ int main(int argc, char *argv[])
         set_sleep(sleep_seconds);
         int t2 = get_time();
         printf(1, "user: sleep real duration: %d\n", t2-t1);
+        exit();
+    }
+
+    if (strcmp(argv[1], COMMAND_BARRIER)  == 0)
+    {
+        printf(1, "user: starting barrier ... \n");
+        barrier_init(4);
+        if(fork() != 0){
+            sleep(100);
+        }
+        fork();
+        printf(1, "user: before barrier pid: %d\n", getpid());
+        barrier_wait();
+        printf(1, "user: after barrier pid: %d\n", getpid());
+        wait();
+        wait();
+        exit();
+    }
+
+    if (strcmp(argv[1], COMMAND_REENTRANT)  == 0)
+    {
+        printf(1, "user: starting reentrant ... \n");
+        
         exit();
     }
 

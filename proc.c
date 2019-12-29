@@ -853,3 +853,32 @@ void print_processes_info()
     cprintf("        %s        %s \n", hrrn_str, priority_str);
   }
 }
+
+//  Lab 04
+
+struct
+{
+  int max_count;
+  int counter;
+} barrier;
+
+void barrier_init(int barrier_count)
+{
+  barrier.counter = 0;
+  barrier.max_count = barrier_count;
+  cprintf("Kernel: barrier initialized.\n");
+  return ;
+}
+
+void barrier_wait(){
+  barrier.counter++;
+  // cprintf("%d, %d\n", barrier.counter, barrier.max_count);
+  if(barrier.counter < barrier.max_count){
+    acquire(&ptable.lock);
+    sleep(/*channel*/ &barrier, &ptable.lock);
+    release(&ptable.lock);
+  }else{
+    cprintf("-------------------\nKernel: Barrier is broken!\n");
+    wakeup(&barrier);
+  }
+}

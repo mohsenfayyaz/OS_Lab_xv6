@@ -42,6 +42,30 @@ acquire(struct spinlock *lk)
   getcallerpcs(&lk, lk->pcs);
 }
 
+void
+acquire_reentrant(struct spinlock *lk)
+{
+  pushcli(); // disable interrupts to avoid deadlock.
+  if(lk->pid != myproc()->pid)
+    if(holding(lk))
+      panic("acquire");
+
+  // The xchg is atomic.
+  while(xchg(&lk->locked, 1) != 0)
+    ;
+
+  // Tell the C compiler and the processor to not move loads or stores
+  // past this point, to ensure that the critical section's memory
+  // references happen after the lock is acquired.
+  __sync_synchronize();
+
+  // Record info about lock acquisition for debugging.
+
+  lk->cpu = mycpu();
+  lk->pid = myproc()->pid;
+  getcallerpcs(&lk, lk->pcs);
+}
+
 // Release the lock.
 void
 release(struct spinlock *lk)
